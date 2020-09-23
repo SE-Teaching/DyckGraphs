@@ -28,9 +28,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
-                                       llvm::cl::desc("Dump dot graph of Offline Constraint Graph"));
-
 
 /*!
  * Builder of offline constraint graph
@@ -52,6 +49,7 @@ void CFLGraph::buildOfflineCG(MemSSA* mssa)
         loads.insert(load);
         NodeID src = load->getSrcID();
         NodeID dst = load->getDstID();
+        pointsToList.insert(pta->getPts(src));
         const MemRegion* mr = mrgen->getMR(pta->getPts(src));
         addNormalGepCGEdge(src,dst, mr->getMRID());
     }
@@ -63,6 +61,7 @@ void CFLGraph::buildOfflineCG(MemSSA* mssa)
         stores.insert(store);
         NodeID src = store->getSrcID();
         NodeID dst = store->getDstID();
+        pointsToList.insert(pta->getPts(dst));
         const MemRegion* mr = mrgen->getMR(pta->getPts(dst));
         addNormalGepCGEdge(src,dst, mr->getMRID());
     }
@@ -81,8 +80,6 @@ void CFLGraph::buildOfflineCG(MemSSA* mssa)
     {
         removeAddrEdge(*it);
     }
-    // Dump offline graph with removed load and store edges
-    dump("oCG_final");
 }
 
 
@@ -116,7 +113,7 @@ struct DOTGraphTraits<CFLGraph*> : public DOTGraphTraits<PAG*>
         {
             PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
             bool briefDisplay = true;
-            bool nameDisplay = true;
+            bool nameDisplay = false;
 
 
             if (briefDisplay)
@@ -152,86 +149,26 @@ struct DOTGraphTraits<CFLGraph*> : public DOTGraphTraits<PAG*>
 
     static std::string getNodeAttributes(NodeType *n, CFLGraph*)
     {
-        if (PAG::getPAG()->findPAGNode(n->getId()))
-        {
-            PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-            if (SVFUtil::isa<ValPN>(node))
-            {
-                if (SVFUtil::isa<GepValPN>(node))
-                    return "shape=hexagon";
-                else if (SVFUtil::isa<DummyValPN>(node))
-                    return "shape=diamond";
-                else
-                    return "shape=circle";
-            }
-            else if (SVFUtil::isa<ObjPN>(node))
-            {
-                if (SVFUtil::isa<GepObjPN>(node))
-                    return "shape=doubleoctagon";
-                else if (SVFUtil::isa<FIObjPN>(node))
-                    return "shape=septagon";
-                else if (SVFUtil::isa<DummyObjPN>(node))
-                    return "shape=Mcircle";
-                else
-                    return "shape=doublecircle";
-            }
-            else if (SVFUtil::isa<RetPN>(node))
-            {
-                return "shape=Mrecord";
-            }
-            else if (SVFUtil::isa<VarArgPN>(node))
-            {
-                return "shape=octagon";
-            }
-            else
-            {
-                assert(0 && "no such kind node!!");
-            }
-            return "";
-        }
-        else
-        {
-            return "shape=doublecircle";
-        }
+    	return "";
     }
 
     template<class EdgeIter>
     static std::string getEdgeAttributes(NodeType*, EdgeIter EI, CFLGraph*)
     {
-        ConstraintEdge* edge = *(EI.getCurrent());
-        assert(edge && "No edge found!!");
-        if (edge->getEdgeKind() == ConstraintEdge::Addr)
-        {
-            return "color=green";
-        }
-        else if (edge->getEdgeKind() == ConstraintEdge::Copy)
-        {
-            return "color=black";
-        }
-        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
-                 || edge->getEdgeKind() == ConstraintEdge::VariantGep)
-        {
-            return "color=purple";
-        }
-        else if (edge->getEdgeKind() == ConstraintEdge::Store)
-        {
-            return "color=blue";
-        }
-        else if (edge->getEdgeKind() == ConstraintEdge::Load)
-        {
-            return "color=red";
-        }
-        else
-        {
-            assert(0 && "No such kind edge!!");
-        }
-        return "";
+    	return "";
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType*, EdgeIter)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
-        return "";
+        std::string str;
+        raw_string_ostream rawstr(str);
+        ConstraintEdge* edge = *(EI.getCurrent());
+
+        if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)){
+        	rawstr << gep->getOffset();
+        }
+        return rawstr.str();
     }
 };
 } // End namespace llvm

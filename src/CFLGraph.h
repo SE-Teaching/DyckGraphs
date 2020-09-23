@@ -26,6 +26,7 @@
 
 #include "Graphs/ConsG.h"
 #include "Util/SCC.h"
+#include "MSSA/MemSSA.h"
 
 namespace SVF
 {
@@ -43,6 +44,7 @@ public:
     typedef std::set<LoadCGEdge*> LoadEdges;
     typedef std::set<StoreCGEdge*> StoreEdges;
     typedef std::set<AddrCGEdge*> AddrEdges;
+    typedef std::set<PointsTo, SVF::MemRegion::equalPointsTo> PointsToList;
 
 public:
     CFLGraph(PAG *p, MemSSA* mssa) : ConstraintGraph(p)
@@ -53,6 +55,8 @@ public:
 
     void buildOfflineCG(MemSSA* mssa);
 
+private:
+    PointsToList pointsToList;
 };
 
 } // End namespace SVF
