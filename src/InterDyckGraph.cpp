@@ -59,14 +59,10 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     for(PointsToIDMap::iterator cit = pointsToIDMap.begin(), ecit = pointsToIDMap.end(); cit!=ecit; ++cit)
     {
         const PointsTo& lpts = cit->first;
-        for(PointsToIDMap::iterator it = pointsToIDMap.begin(), eit = pointsToIDMap.end(); it!=eit; ++it){
+        for(PointsToIDMap::iterator it = cit; it!=ecit; ++it){
             const PointsTo& rpts = it->first;
-            if(lpts!=rpts){
-            	const PointsTo& rRep = getRepPointsTo(rpts);
-            	const PointsTo& lRep = getRepPointsTo(lpts);
-            	if(rRep.contains(lRep))
-            		setRepPointsTo(lRep,rRep);
-            }
+            	if(rpts.contains(lpts))
+            		setRepPointsTo(lpts,rpts);
         }
     }
 
@@ -77,7 +73,8 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     {
         LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
         const PointsTo& pts = pta->getPts(load->getSrcID());
-        ldLabels[load] = getPts2ID(pts);
+        const PointsTo& rep = getRepPointsTo(pts);
+        ldLabels[load] = getPts2ID(rep);
     }
 
     // label each store with a unique id from the established representation mapping
@@ -86,7 +83,8 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     {
         StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
         const PointsTo& pts = pta->getPts(store->getDstID());
-        stLabels[store] = getPts2ID(pts);
+        const PointsTo& rep = getRepPointsTo(pts);
+        stLabels[store] = getPts2ID(rep);
     }
 
     // label each call with a unique id from the callsite
