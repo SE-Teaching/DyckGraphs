@@ -20,12 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-/*
- * CFLGraph.cpp
- *
- *  Created on: Oct 28, 2018
- *      Author: Yuxiang Lei
- */
+
 
 #include "CFLGraph.h"
 #include "MSSA/MemSSA.h"

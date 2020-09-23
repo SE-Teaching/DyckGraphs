@@ -20,12 +20,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-/*
- * CFLGraph.h
- *
- *  Created on: Oct 28, 2018
- *      Author: Yuxiang Lei
- */
 
 #ifndef CFLGraph_H
 #define CFLGraph_H
