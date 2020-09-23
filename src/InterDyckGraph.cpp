@@ -110,6 +110,44 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     }
 
 
+    // for all other types of edges  x-->y, they will be transformed to be x--ob_1-->z-->cb_1-->y
+    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = directEdgeSet.begin(), eit =
+    		directEdgeSet.end(); it != eit; ++it)
+    {
+    	ConstraintEdge *edge = *it;
+    	if(isCallEdge(edge)==false && isRetEdge(edge) == false){
+    		nonLabelEdges.insert(edge);
+    	}
+    }
+
+    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = nonLabelEdges.begin(), eit =
+    		nonLabelEdges.end(); it != eit; ++it)
+    {
+    	ConstraintEdge *edge = *it;
+        removeDirectEdge(edge);
+
+        NodeID refId = pag->addDummyValNode();
+        ConstraintNode* node = new ConstraintNode(refId);
+        addConstraintNode(node, refId);
+
+        StoreCGEdge* store = addStoreCGEdge(edge->getSrcID(),refId);
+        LoadCGEdge* load = addLoadCGEdge(refId,edge->getDstID());
+        assert(store && "store not created?");
+        assert(load && "load not created?");
+
+        NodeID maxID = pointsToIDMap.size() + 1;
+        stLabels[store] = maxID;
+        ldLabels[load] = maxID;
+    }
+
+    // collect and remove all address edges
+    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = AddrCGEdgeSet.begin(), eit =
+    		AddrCGEdgeSet.end(); it != eit; ++it)
+    {
+        AddrCGEdge *ad = SVFUtil::dyn_cast<AddrCGEdge>(*it);
+        addrs.insert(ad);
+    }
+
     for (AddrEdges::iterator it = addrs.begin(), eit = addrs.end(); it != eit; ++it)
     {
         removeAddrEdge(*it);
@@ -144,10 +182,10 @@ struct DOTGraphTraits<InterDyckGraph*> : public DOTGraphTraits<PAG*>
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, InterDyckGraph*)
     {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr<< n->getId();
-        return rawstr.str();
+        //std::string str;
+        //raw_string_ostream rawstr(str);
+        //rawstr<< n->getId();
+        return "";
     }
 
     static std::string getNodeAttributes(NodeType *n, InterDyckGraph*)
@@ -177,7 +215,11 @@ struct DOTGraphTraits<InterDyckGraph*> : public DOTGraphTraits<PAG*>
         	else if(graph->isRetEdge(copy)){
         		rawstr << "cb-" << graph->getRetLabel(copy);
         	}
+        	else
+        		assert(false && "do we have a non-labeled edge?");
         }
+        else
+        	assert(false && "do we have a non-labeled edge?");
 
         return rawstr.str();
     }

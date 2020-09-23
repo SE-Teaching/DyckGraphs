@@ -47,6 +47,8 @@ public:
     typedef std::map<const ConstraintEdge*, NodeID> RetLabelMap;
 
     typedef std::set<AddrCGEdge*> AddrEdges;
+    typedef std::set<ConstraintEdge*> NonLabelEdges;
+
     typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
     typedef std::map<PointsTo, NodeID, MemRegion::equalPointsTo> PointsToIDMap;
 
@@ -139,7 +141,7 @@ private:
     StoreLabelMap stLabels;
     CallLabelMap callLabels;
     RetLabelMap retLabels;
-
+    NonLabelEdges nonLabelEdges;
 };
 
 } // End namespace SVF

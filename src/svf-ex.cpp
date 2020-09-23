@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
 		//pag->dump("pag");
 
 	    InterDyckGraph* cflG = InterDyckGraph::GetIDG(pag);
-	    cflG->dump("cflg");
+	    cflG->dump("interdyck");
 
     return 0;
 }
