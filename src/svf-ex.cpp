@@ -31,7 +31,8 @@
 #include "WPA/Andersen.h"
 #include "SABER/LeakChecker.h"
 #include "SVF-FE/PAGBuilder.h"
-#include "CFLGraph.h"
+
+#include "InterDyckGraph.h"
 
 using namespace SVF;
 using namespace llvm;
@@ -59,12 +60,7 @@ int main(int argc, char ** argv) {
 		PAG *pag = builder.build(svfModule);
 		//pag->dump("pag");
 
-		/// Create Andersen's pointer analysis
-		Andersen *ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-		/// Sparse value-flow graph (SVFG)
-		SVFGBuilder svfBuilder;
-	    MemSSA* mssa = svfBuilder.buildMSSA(ander, (VFG::PTRONLYSVFGK));
-	    CFLGraph* cflG = new CFLGraph(pag,mssa);
+	    InterDyckGraph* cflG = InterDyckGraph::GetIDG(pag);
 	    cflG->dump("cflg");
 
     return 0;
