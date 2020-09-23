@@ -5,7 +5,7 @@ npm i --silent svf-lib --prefix ${HOME}
 
 ## 2. Clone repository
 ```
-git clone https://github.com/SVF-tools/SVF-example.git
+git clone https://github.com/yuleisui/DyckGraphs.git
 ```
 
 ## 3. Setup SVF environment and build your project 
