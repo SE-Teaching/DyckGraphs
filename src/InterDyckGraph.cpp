@@ -64,8 +64,8 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
             if(lpts!=rpts){
             	const PointsTo& rRep = getRepPointsTo(rpts);
             	const PointsTo& lRep = getRepPointsTo(lpts);
-            	rRep.contains(lRep);
-                setRepPointsTo(lRep,rRep);
+            	if(rRep.contains(lRep))
+            		setRepPointsTo(lRep,rRep);
             }
         }
     }
