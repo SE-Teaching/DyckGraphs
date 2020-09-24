@@ -153,7 +153,51 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
 }
 
 void InterDyckGraph::dump(std::string name){
-    GraphPrinter::WriteGraphToFile(outs(), name, this);
+    outs() << "Writing graph to " << name << "...\n";
+    error_code err;
+    ToolOutputFile F(name, err, llvm::sys::fs::F_None);
+    if (err)
+    {
+        outs() << "  error opening file for writing!\n";
+        F.os().clear_error();
+        return;
+    }
+
+    for(ConstraintGraph::iterator it = begin(), eit = end(); it!=eit; ++it){
+        ConstraintNode* node = it->second;
+        for(ConstraintNode::iterator cit = node->OutEdgeBegin(), ecit = node->OutEdgeEnd(); cit!=ecit; ++cit){
+            ConstraintEdge* edge = *cit;
+
+            if(LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(edge)){
+                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cp--" << getLoadLabel(load) << "]\n";
+            }
+            else if(StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(edge)){
+                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=op--" << getStoreLabel(store)<< "]\n";
+            }
+            else if(CopyCGEdge *copy = SVFUtil::dyn_cast<CopyCGEdge>(edge)){
+
+                if(isCallEdge(copy)){
+                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=ob--" << getCallLabel(copy)<< "]\n";
+                }
+                else if(isRetEdge(copy)){
+                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cb--" << getRetLabel(copy)<< "]\n";
+                }
+                else
+                    assert(false && "do we have a non-labeled edge?");
+            }
+            else
+                assert(false && "do we have a non-labeled edge?");
+        }
+    }
+
+    // Job finish and close file
+    F.os().close();
+    if (!F.os().has_error())
+    {
+        outs() << "\n";
+        F.keep();
+        return;
+    }
 }
 
 // --- GraphTraits specialization for InterDyckGraph ---
