@@ -112,30 +112,34 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = directEdgeSet.begin(), eit =
     		directEdgeSet.end(); it != eit; ++it)
     {
-    	ConstraintEdge *edge = *it;
-    	if(isCallEdge(edge)==false && isRetEdge(edge) == false){
-    		nonLabelEdges.insert(edge);
-    	}
+        ConstraintEdge *edge = *it;
+    	    if(isCallEdge(edge)==false && isRetEdge(edge) == false){
+    	        nonLabelEdges.insert(edge);
+    	    }
     }
 
+    NodeID maxID = pointsToIDMap.size() + 1;
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = nonLabelEdges.begin(), eit =
     		nonLabelEdges.end(); it != eit; ++it)
     {
-    	ConstraintEdge *edge = *it;
-        removeDirectEdge(edge);
-
+    	    ConstraintEdge *edge = *it;
         NodeID refId = pag->addDummyValNode();
         ConstraintNode* node = new ConstraintNode(refId);
         addConstraintNode(node, refId);
+        assert(hasConstraintNode(edge->getSrcID()) && hasConstraintNode(edge->getDstID()));
+        assert(edge->getSrcID() == sccRepNode(edge->getSrcID()));
+        assert(edge->getDstID() == sccRepNode(edge->getDstID()));
 
         StoreCGEdge* store = addStoreCGEdge(edge->getSrcID(),refId);
         LoadCGEdge* load = addLoadCGEdge(refId,edge->getDstID());
-        assert(store && "store not created?");
-        assert(load && "load not created?");
-
-        NodeID maxID = pointsToIDMap.size() + 1;
         stLabels[store] = maxID;
         ldLabels[load] = maxID;
+    }
+    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = nonLabelEdges.begin(), eit =
+            nonLabelEdges.end(); it != eit; ++it)
+    {
+        ConstraintEdge *edge = *it;
+        removeDirectEdge(edge);
     }
 
     // collect and remove all address edges
