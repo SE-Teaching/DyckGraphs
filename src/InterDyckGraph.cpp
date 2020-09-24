@@ -156,6 +156,19 @@ void InterDyckGraph::buildDyckGraph(PointerAnalysis* pta)
     }
 }
 
+NodeID InterDyckGraph::resetLabels(ID2IDMap& id2idMap, NodeID label){
+    ID2IDMap::iterator it = id2idMap.find(label);
+    if(it ==id2idMap.end()){
+        NodeID newlabel = id2idMap.size() + 1;
+        id2idMap[label] = newlabel;
+        label = newlabel;
+    }
+    else{
+        label = it->second;
+    }
+    return label;
+}
+
 void InterDyckGraph::dump(std::string name){
     outs() << "Writing graph to " << name << "...\n";
     error_code err;
@@ -167,24 +180,31 @@ void InterDyckGraph::dump(std::string name){
         return;
     }
 
+    ID2IDMap pMap;
+    ID2IDMap bMap;
+
     for(ConstraintGraph::iterator it = begin(), eit = end(); it!=eit; ++it){
         ConstraintNode* node = it->second;
         for(ConstraintNode::iterator cit = node->OutEdgeBegin(), ecit = node->OutEdgeEnd(); cit!=ecit; ++cit){
             ConstraintEdge* edge = *cit;
 
             if(LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(edge)){
-                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cp--" << getLoadLabel(load) << "]\n";
+                NodeID label = resetLabels(pMap, getLoadLabel(load));
+                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cp--" << label << "]\n";
             }
             else if(StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(edge)){
-                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=op--" << getStoreLabel(store)<< "]\n";
+                NodeID label = resetLabels(pMap, getStoreLabel(store));
+                F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=op--" << label << "]\n";
             }
             else if(CopyCGEdge *copy = SVFUtil::dyn_cast<CopyCGEdge>(edge)){
 
                 if(isCallEdge(copy)){
-                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=ob--" << getCallLabel(copy)<< "]\n";
+                    NodeID label = resetLabels(bMap, getCallLabel(copy));
+                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=ob--" << label << "]\n";
                 }
                 else if(isRetEdge(copy)){
-                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cb--" << getRetLabel(copy)<< "]\n";
+                    NodeID label = resetLabels(bMap, getRetLabel(copy));
+                    F.os() << edge->getSrcID() << "->" << edge->getDstID() << "[label=cb--" << label << "]\n";
                 }
                 else
                     assert(false && "do we have a non-labeled edge?");
@@ -193,6 +213,8 @@ void InterDyckGraph::dump(std::string name){
                 assert(false && "do we have a non-labeled edge?");
         }
     }
+    F.os() << "p number (load/store): " << pMap.size() << "\n";
+    F.os() << "b number (call/return): " << bMap.size() << "\n";
 
     // Job finish and close file
     F.os().close();

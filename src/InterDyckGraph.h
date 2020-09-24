@@ -46,6 +46,8 @@ public:
     typedef std::map<const ConstraintEdge*, NodeID> CallLabelMap;
     typedef std::map<const ConstraintEdge*, NodeID> RetLabelMap;
 
+    typedef std::map<NodeID, NodeID> ID2IDMap;
+
     typedef std::set<AddrCGEdge*> AddrEdges;
     typedef std::set<ConstraintEdge*> NonLabelEdges;
 
@@ -130,6 +132,9 @@ public:
     inline bool isRetEdge(const ConstraintEdge* edge) const{
     	return retLabels.find(edge)!=retLabels.end();
     }
+    /// Reset labels
+    NodeID resetLabels(ID2IDMap& id2idMap, NodeID label);
+
     /// Dump graph into dot file
     void dump(std::string name);
 
